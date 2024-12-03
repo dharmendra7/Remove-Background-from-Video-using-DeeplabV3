@@ -184,5 +184,5 @@ cython_debug/
 
 processed_videos
 media
-model_v3
+# model_v3
 audio
