@@ -1,0 +1,292 @@
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <title>Upload Videos</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet"
+        integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js"
+        integrity="sha384-MrcW6ZMFYlzcLA8Nl+NtUVF0sA7MsXsP1UyJoMp4YLEuNSfAP+JcXn/tWtIaxVXM"
+        crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.2/dist/umd/popper.min.js"
+        integrity="sha384-IQsoLXl5PILFhosVNubq5LC7Qb9DXgDA9i+tQ8Zj3iwWAwPtgFTxbJ8NT4GN1R8p"
+        crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.min.js"
+        integrity="sha384-cVKIPhGWiC2Al4u+LWgxfKTRIcfu0JTxR+EQDz/bgldoEyl4H0zUF0QKbrJ0EcQF"
+        crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.1/jquery.min.js"
+        integrity="sha512-aVKKRRi/Q/YV+4mjoKBsE4x3H+BkegoM/em46NNlCqNTmUYADjBbeNefNxYV7giUp0VxICtqdrbqU7iVaeZNXA=="
+        crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <style>
+        .alert {
+            padding: 20px;
+            background-color: #f44336;
+            color: white;
+            opacity: 1;
+            transition: opacity 0.6s;
+            margin-bottom: 15px;
+        }
+
+        .alert.success {
+            background-color: #04AA6D;
+        }
+
+        .alert.info {
+            background-color: #2196F3;
+        }
+
+        .alert.warning {
+            background-color: #ff9800;
+        }
+
+        .closebtn {
+            margin-left: 15px;
+            color: white;
+            font-weight: bold;
+            float: right;
+            font-size: 22px;
+            line-height: 20px;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+
+        .closebtn:hover {
+            color: black;
+        }
+
+        .alert {
+            opacity: 1;
+            transition: opacity 0.6s;
+        }
+
+        .messages .child-message strong {
+            font-family: 'Muli-Bold';
+            font-weight: normal;
+        }
+
+        /* .messages.warning {
+            top: 0 !important;
+            transition: 0.9s;
+          } */
+
+        .messages .child-message strong span {
+            font-family: 'Muli-Regular';
+        }
+
+        .alert-success,
+        .alert.alert-success.messages {
+            background-color: #3be0a5 !important;
+        }
+
+        .messages .child-message {
+            color: #fff;
+        }
+
+        .messages {
+            width: 100%;
+            transition: 0.9s top;
+            max-width: 420px;
+            margin: 22px;
+            right: 0;
+            border-radius: 4px;
+            box-shadow: 1px 1px 8px 0px #00000047;
+            position: fixed !important;
+            z-index: 1;
+            display: none;
+            opacity: 0;
+            z-index: 999;
+            top: 0;
+        }
+
+        .messages.alert {
+            opacity: 1;
+            display: block;
+        }
+    </style>
+</head>
+
+<body>
+
+    {% for message in messages %}
+    <div class="alert {{ message.tags }} django messages" role="alert">
+        <span aria-hidden="true" class="closebtn">&times;</span>
+        <span class="django-child-message">{{ message }}</span>
+    </div>
+    {% endfor %}
+    <div class="container">
+
+        <!--Simple Form-->
+        <h2 class="my-4">Add a Video</h2>
+        <form method="post" id="upload_form" enctype="multipart/form-data">
+            {% csrf_token %}
+            <input type="file" id="input_file" name="upload" accept="video/*">
+            <br>
+            <input class="btn btn-dark my-4" id="submit" value="Upload" type="submit">
+
+        </form>
+        <p id="texto"></p>
+        <div class="container" id="progress">
+            <h3 class="download-video" ></h3>
+            <h4>Please upload a video.</h4>
+            <div class="progress">
+                <div id="js-progress-bar" class="progress-bar" role="progressbar" aria-valuenow="0" aria-valuemin="0"
+                    aria-valuemax="100" style="width:0%">
+                    0%
+                </div>
+            </div>
+        </div>
+        <!--See File Uploaded-->
+        <!-- {% for i in  result%}
+            <p>helloooooo{{i }}</p>
+
+        {% endfor %} -->
+        {% if video_file %}
+        <h2 class="my-4">Video</h2>
+        <div class="row">
+            <video style="height: 20%; width: 50%;" name='demo' controls autoplay>
+                <source width='30%' height='40%' src="{{ video_file }}" type="video/mp4">
+            </video>
+        </div>
+        {% endif %}
+
+    </div>
+
+    <script>
+
+        var timer = function () {
+            // Decrease
+            value--;
+
+            $('#js-progress-bar').css('width', `${90 - value}%`);
+            $('#js-progress-bar').text(`${90 - value}%`)
+
+            // Clear if we're at 0
+            if (value === 0) {
+                clearTimeout(intervalId);
+            }
+        };
+
+        const roomName = 'broadcast';
+        const notificationSocket = new WebSocket(
+            'ws://'
+            + window.location.host
+            + '/ws/notification/'
+            + roomName
+            + '/'
+        );
+
+        notificationSocket.onmessage = function (e) {
+            const data = JSON.parse(e.data);
+            //document.querySelector('#chat-log').value += (data.message + '\n');
+            percentComplete = parseInt(data['count']);
+            const percentages = `${percentComplete}%`;
+            $('#js-progress-bar').attr('aria-valuenow', percentComplete).html(percentages);
+            $('#js-progress-bar').css({
+                width: percentages
+            });
+
+            $('#upload_form [type=submit]').attr('disabled', true);
+            if (data['count'] === 100) {
+                $('#js-progress-bar').addClass('bg-success');
+                $('#upload_form')[0].reset();
+                $('#upload_form [type=submit]').attr('disabled', false);
+
+            }
+        };
+
+        notificationSocket.onclose = function (e) {
+            console.error('Chat socket closed unexpectedly');
+        };
+        $(document).ready(function () {
+
+            $("#upload_form").submit(function (e) {
+                $('#progress').find('h4').text('Start uploading...')
+                e.preventDefault();
+                $.ajax({
+                    xhr: function () {
+                        var xhr = new window.XMLHttpRequest();
+
+                        xhr.upload.addEventListener("progress", function (evt) {
+
+                            if (evt.lengthComputable) {
+                                var percentComplete = evt.loaded / evt.total;
+                                percentComplete = parseInt(percentComplete * 100);
+
+                                const percentages = `${percentComplete}%`;
+                                $('#js-progress-bar').attr('aria-valuenow', percentComplete).html(percentages);
+                                $('#js-progress-bar').css({
+                                    width: percentages
+                                });
+
+                                $('#upload_form [type=submit]').attr('disabled', true);
+                                if (percentComplete === 100) {
+                                    $('#js-progress-bar').addClass('bg-success');
+                                    $('#upload_form')[0].reset();
+                                    $('#upload_form [type=submit]').attr('disabled', false);
+                                    $('#progress').find('h4').text('Wait untill background removing process start!')
+                                    setTimeout(function () {
+                                        $('#progress').find('h4').text('background removing process start ...')
+                                    }, 9000)
+                                }
+                                console.log($('#js-progress-bar').text())
+                            }
+                        }, false);
+
+                        return xhr;
+                    },
+                    url: 'create-frames/',
+                    type: "POST",
+                    data: new FormData(this),
+                    dataType: "json",
+                    contentType: false,
+                    processData: false,
+                    success: function (result) {
+                        $('#progress').find('h4').text('background removing process complete')
+                        $('#js-progress-bar').css('width', '100%');
+                        $('#js-progress-bar').text('100%')
+
+                        setTimeout(function () {
+                            $('#progress').find('h4').text('merging process start ...')
+
+                            intervalId = setInterval(timer, 1000, value = 90);
+
+                            $.ajax({
+                                url: 'merge-frames/',
+                                dataType: "json",
+                                contentType: false,
+                                processData: false,
+                                success: function (result) {
+                                    console.log(result)
+                                    clearTimeout(intervalId);
+                                    $('#progress').find('h4').text('Now you are ready to download a video.')
+                                    $('#js-progress-bar').css('width', `100%`);
+                                    $('#js-progress-bar').text(`100%`)
+                                    $('.download-video').html(`<a href=${result['data']}>Download</a>`);
+                                }
+                            });
+                        }, 1000)
+                    }
+                });
+            });
+        })
+        setTimeout(function () {
+            $('.messages').each(function () {
+                this.style.display = "none"
+                this.style.opacity = 0
+            })
+        }, 3000);
+        try {
+            var close = document.getElementsByClassName("closebtn");
+
+            close[0].onclick = function () {
+                var div = this.parentElement;
+                div.style.opacity = "0";
+                setTimeout(function () { div.style.display = "none"; }, 600);
+            }
+        } catch {
+
+        }
+    </script>
+</body>
+
+</html>

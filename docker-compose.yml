@@ -1,0 +1,39 @@
+version: '3.9'
+
+networks:
+    bgremove-network:
+        driver: bridge
+
+services:
+  bgremove:
+    platform: linux/x86_64
+    image: postgres:11.6
+    container_name: bgremove_mysql
+    restart: always
+    ports:
+      - 5433:5432
+    volumes:
+      - ./postgres_data:/var/lib/postgresql/data/
+    environment:
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME}
+    networks:
+      - bgremove-network
+  pythonapp:
+    build: 
+     context: .
+     dockerfile: Dockerfile
+    container_name: bgremove_python
+    depends_on:
+      - bgremove
+    command: bash -c "/wait && python3 manage.py migrate && ./manage.py runserver 0.0.0.0:8587"
+    ports:
+      - 8587:8587
+    volumes:
+      - .:/code
+    environment:
+      - WAIT_HOSTS=bgremove:5432
+    networks:
+      - bgremove-network
+   
