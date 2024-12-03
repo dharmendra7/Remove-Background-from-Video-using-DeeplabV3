@@ -182,7 +182,7 @@ cython_debug/
 
 # End of https://www.toptal.com/developers/gitignore/api/django
 
-processed_videos
-media
+# processed_videos
+# media
 # model_v3
-audio
+# audio
